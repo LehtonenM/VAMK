@@ -7,4 +7,6 @@ function sum(a, b) {
     console.log(sum(2, 3))
     
 
-document.getElementById("message").innerText = "Hello, World!";
+//document.getElementById("message").innerText = "Hello, World!";
+
+document.getElementById("message").innerText = "Hello, Git and Vercel!";
