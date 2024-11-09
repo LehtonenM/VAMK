@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jakolaskupeli</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #ff5f6d, #ffc371);
+            color: #fff;
+            text-align: center;
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 3em;
+            color: #ffdd99;
+            text-shadow: 2px 2px #333;
+        }
+        #game {
+            max-width: 500px;
+            padding: 20px;
+            border-radius: 15px;
+            background-color: rgba(0, 0, 0, 0.6);
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            border: none;
+            margin-top: 10px;
+            width: calc(100% - 24px);
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            background-color: #ffdd99;
+            color: #333;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #ffe4b5;
+        }
+        #score, #result {
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .question-text {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .calculation {
+            font-size: 1.8em;
+            font-family: 'Courier New', Courier, monospace;
+            color: #ffdd99;
+        }
+        .correct {
+            color: #7CFC00;
+            font-weight: bold;
+        }
+        .incorrect {
+            color: #ff4040;
+            font-weight: bold;
+        }
+        #instructions, #top-scores {
+            max-width: 300px;
+            padding: 20px;
+            border-radius: 15px;
+            background-color: rgba(0, 0, 0, 0.6);
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+            color: #ffdd99;
+            font-size: 1em;
+            text-align: left;
+        }
+        #top-scores h2, #instructions h2 {
+            color: #ffdd99;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jakolaskupeli</h1>
+    <div id="game">
+        <p>Syötä nimesi:</p>
+        <input type="text" id="username">
+        <button onclick="startGame()">Aloita peli</button>
+        <p id="question"></p>
+        <input type="number" id="answer" placeholder="Vastauksesi">
+        <button onclick="submitAnswer()">Lähetä vastaus</button>
+        <p id="result"></p>
+        <p id="score"></p>
+        <button onclick="newGame()" id="newGameButton" style="display:none;">Uusi peli</button>
+    </div>
+
+    <div id="instructions">
+        <h2>Pelin ohjeet</h2>
+        <p>Vastaa jakolaskuihin antamalla oikea tulos. Jokaisesta laskusta voi saada pisteitä seuraavasti:</p>
+        <ul>
+            <li>3 pistettä - tarkka vastaus</li>
+            <li>2 pistettä - vastaus lähellä oikeaa (0.1 tarkkuudella)</li>
+            <li>1 piste - vastaus hieman oikean alapuolella (0.5 tarkkuudella)</li>
+        </ul>
+        <p>Peli loppuu, kun olet vastannut 20 kysymykseen. Yritä saada mahdollisimman korkea pistemäärä!</p>
+    </div>
+
+    <div id="top-scores">
+        <h2>Top 3 Pelaajat</h2>
+        <ol id="scoreboard">
+            <li>Ei vielä pisteitä</li>
+        </ol>
+    </div>
+
+    <script>
+        let score = 0;
+        let currentQuestion = 0;
+        let userName = '';
+        let questions = [];
+        let topScores = [];
+
+        document.getElementById('username').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                startGame();
+            }
+        });
+
+        document.getElementById('answer').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                submitAnswer();
+            }
+        });
+
+        // Aloita uusi peli
+        function startGame() {
+            resetGame(); // Nollataan pelin muuttujat ja näkymät
+            userName = document.getElementById('username').value;
+            if (userName === '') {
+                alert('Anna nimesi.');
+                return;
+            }
+            generateUniqueQuestions();
+            displayQuestion();
+        }
+
+        // Nollaa pelin muuttujat ja näkymät
+        function resetGame() {
+            score = 0;
+            currentQuestion = 0;
+            questions = []; // Tyhjennetään vanhat kysymykset
+            document.getElementById('score').textContent = `Pisteet: ${score}`;
+            document.getElementById('result').textContent = '';
+            document.getElementById('newGameButton').style.display = "none";
+            document.getElementById('answer').value = '';
+        }
+
+        // Generoi 20 satunnaista uniikkia jakolaskukysymystä
+        function generateUniqueQuestions() {
+            let questionSet = new Set();
+            while (questions.length < 20) {
+                let denominator = Math.floor(Math.random() * 10) + 1;  // välttää jakamista nollalla
+                let answer = Math.floor(Math.random() * 11);  // kokonaistulos väliltä 0-10
+                let numerator = denominator * answer;  // määritetään osoittaja vastaamaan kokonaislaskua
+                let questionKey = `${numerator}/${denominator}`;
+
+                if (!questionSet.has(questionKey)) {
+                    questionSet.add(questionKey);
+                    questions.push({
+                        question: `${numerator} / ${denominator} = ?`,
+                        answer: answer,
+                        numerator: numerator,
+                        denominator: denominator
+                    });
+                }
+            }
+        }
+
+        // Näytä kysymys
+        function displayQuestion() {
+            const questionText = document.createElement('span');
+            questionText.classList.add('question-text');
+            questionText.textContent = `Kysymys ${currentQuestion + 1}: `;
+
+            const calculation = document.createElement('span');
+            calculation.classList.add('calculation');
+            calculation.textContent = questions[currentQuestion].question;
+
+            const questionElement = document.getElementById('question');
+            questionElement.innerHTML = '';
+            questionElement.appendChild(questionText);
+            questionElement.appendChild(calculation);
+        }
+
+        // Lähetä vastaus
+        function submitAnswer() {
+            if (currentQuestion >= 20) return;
+
+            let userAnswer = parseInt(document.getElementById('answer').value);
+            let correctAnswer = questions[currentQuestion].answer;
+            let points = 0;
+            let feedback = '';
+
+            if (userAnswer === correctAnswer) {
+                points = 3;
+                feedback = `Mahtavaa, ${userName}! Oikein! 🎉 Jakolasku on: ${questions[currentQuestion].numerator} / ${questions[currentQuestion].denominator} = ${correctAnswer}`;
+                document.getElementById('result').className = "correct";
+            } else {
+                feedback = `Väärin tällä kertaa, ${userName}. Jakolasku menee näin: ${questions[currentQuestion].numerator} / ${questions[currentQuestion].denominator} = ${correctAnswer}. Yritä uudestaan!`;
+                document.getElementById('result').className = "incorrect";
+            }
+
+            score += points;
+            document.getElementById('result').textContent = feedback;
+            document.getElementById('score').textContent = `Pisteet: ${score}`;
+
+            currentQuestion++;
+            if (currentQuestion < 20) {
+                displayQuestion();
+            } else {
+                endGame();
+            }
+
+            document.getElementById('answer').value = '';
+        }
+
+        // Lopeta peli
+        function endGame() {
+            document.getElementById('question').textContent = `Peli ohi, ${userName}! Lopulliset pisteesi ovat ${score}.`;
+            document.getElementById('newGameButton').style.display = "inline";
+            updateTopScores();
+        }
+
+        // Päivitä ja näytä top 3 pisteet
+        function updateTopScores() {
+            topScores.push({ name: userName, score: score });
+            topScores.sort((a, b) => b.score - a.score);
+            topScores = topScores.slice(0, 3);
+
+            const scoreboard = document.getElementById('scoreboard');
+            scoreboard.innerHTML = '';
+            topScores.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${entry.name} - ${entry.score} pistettä`;
+                scoreboard.appendChild(li);
+            });
+        }
+
+        // Aloita uusi peli
+        function newGame() {
+            resetGame();
+            document.getElementById('username').value = '';
+            document.getElementById('question').textContent = '';
+        }
+    </script>
+</body>
+</html>
